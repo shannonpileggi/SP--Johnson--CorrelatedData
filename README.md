@@ -6,7 +6,7 @@
 
 ### Objective
 
-The objective of this senior project is to learn about power and sample size computations with correlated data.  Motivation:
+The objective of this senior project is to learn about power and sample size computations with correlated data. 
 
 ### Motivation 
 
