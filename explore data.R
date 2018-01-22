@@ -10,3 +10,5 @@ tapply(data_sub$tfamtml, as.factor(data_sub$bottype), mean, na.rm = TRUE)
 tapply(data_sub$tfamtml, as.factor(data_sub$bottype), sd, na.rm = TRUE)
 ## sd for clear bottle = 52.43197 mL
 ## sd for opaque bottle = 44.76531 mL
+
+
