@@ -39,11 +39,13 @@ mean(groupA$`Opaque Bottle mL`)
 mean(groupA$Difference)
 sd(groupA$`Clear Bottle mL`)
 sd(groupA$`Opaque Bottle mL`)
+cor(groupA$`Clear Bottle mL`, groupA$`Opaque Bottle mL`)
 # mean difference = 8.879838
 # mean clear bottle = 98.37078 mL
 # mean opaque bottle = 89.49094 mL
 # sd clear bottle = 53.70171 mL
 # sd opaque bottle = 44.66042 mL
+# correlation = 0.5435
 t.test(groupA$`Clear Bottle mL`, groupA$`Opaque Bottle mL`, paired = TRUE)
 
 # Group B: opaue bottle on 1st visit, clear bottle on 2nd visit
@@ -59,10 +61,12 @@ mean(groupB$`Clear Bottle mL`)
 mean(groupB$`Opaque Bottle mL`)
 sd(groupB$`Clear Bottle mL`)
 sd(groupB$`Opaque Bottle mL`)
+cor(groupB$`Clear Bottle mL`, groupB$`Opaque Bottle mL`)
 # mean difference = 6.974264
 # mean clear bottle = 109.7927
 # mean opaque bottle = 102.8184
 # sd clear bottle = 49.44655
 # sd opaque bottle = 44.46599
+# correlation = 0.5276
 t.test(groupB$`Clear Bottle mL`, groupB$`Opaque Bottle mL`, paired = TRUE)
 
