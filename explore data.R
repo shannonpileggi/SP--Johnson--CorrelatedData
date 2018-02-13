@@ -57,7 +57,7 @@ t.test(groupA$`Clear Bottle mL`, groupA$`Opaque Bottle mL`, paired = TRUE)
 powers <- seq(from = .7, to = .9, by = .02)
 for(i in 1:length(powers))
 {
-  power <- power.t.test(delta = mean(groupA$Difference), sd = sd(groupA$Difference), power = powers[i], type = "paired")
+  power <- power.t.test(delta = mean(groupA$Difference), sd = sd(groupA$Difference), power = powers[i], type = "one.sample")
   samplesizes[i] <- power$n  
 }
 power_matrixA <- cbind(powers, samplesizes)
@@ -91,10 +91,41 @@ cor(groupB$`Clear Bottle mL`, groupB$`Opaque Bottle mL`)
 # Ho: There is no difference in mean intake (mL) between using a clear feeding bottle and an opaque feeding bottle.
 t.test(groupB$`Clear Bottle mL`, groupB$`Opaque Bottle mL`, paired = TRUE)
 powers <- seq(from = .7, to = .9, by = .02)
+samplesizes <- rep(NA,length(powers))
 for(i in 1:length(powers))
 {
-  power <- power.t.test(delta = mean(groupB$Difference), sd = sd(groupB$Difference), power = powers[i], type = "paired")
+  power <- power.t.test(delta = mean(groupB$Difference), sd = sd(groupB$Difference), power = powers[i], type = "one.sample")
   samplesizes[i] <- power$n  
 }
 power_matrixB <- cbind(powers, samplesizes)
 
+
+#Power Simulation 
+test <- matrix(NA,nrow = 100000,ncol=1)
+for(i in 1:100000) {
+  x <- rnorm(n = 456, mean = 6.974264, sd = 45.84868)
+  test[i] = mean(x)
+}
+upper = qt(.95, df = 456)
+lower = qt(.05, df = 456)
+lower = 100 - (1.96*(15/sqrt(25)))
+count = 0
+for(j in 1:length(test))
+{
+  if(test[j] > upper | test[j] < lower) {
+    count = count + 1
+}
+
+}
+count/100000
+#
+
+
+#power_func <- function(r)
+#{
+#  sd_diff <- sqrt(var(groupB$`Clear Bottle mL`) + var(groupB$`Opaque Bottle mL`) - 
+#                    2*r*sd(groupB$`Clear Bottle mL`)*sd(groupB$`Opaque Bottle mL`))
+#  power <- power.t.test(n = 38, delta = mean(groupB$Difference, sd = sd_diff, type = "paired"))
+#  return(power$power)
+#}
+#power_func(.5)
