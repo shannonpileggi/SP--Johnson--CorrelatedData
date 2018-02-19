@@ -94,38 +94,42 @@ powers <- seq(from = .7, to = .9, by = .02)
 samplesizes <- rep(NA,length(powers))
 for(i in 1:length(powers))
 {
-  power <- power.t.test(delta = mean(groupB$Difference), sd = sd(groupB$Difference), power = powers[i], type = "one.sample")
+  power <- power.t.test(delta = mean(groupB$Difference), sd = sd(groupB$Difference), power = powers[i], 
+                        type = "one.sample")
   samplesizes[i] <- power$n  
 }
 power_matrixB <- cbind(powers, samplesizes)
-
+power_matrixB
 
 #Power Simulation 
-test <- matrix(NA,nrow = 100000,ncol=1)
-for(i in 1:100000) {
-  x <- rnorm(n = 456, mean = 6.974264, sd = 45.84868)
-  test[i] = mean(x)
+n <- 456
+mu <- 6.974264
+sigma <- 45.84868
+mu0 <- 0
+reps <- 10000
+outsideCI <- numeric(reps)
+set.seed(2)
+for (i in 1:reps) {
+  x <- rnorm(n, mu, sigma)
+  CI.lower <- mean(x) - qt(0.975, n-1)*sd(x)/sqrt(n)
+  CI.upper <- mean(x) + qt(0.975, n-1)*sd(x)/sqrt(n)
+  outsideCI[i] <- ifelse(mu0 < CI.lower | mu0 > CI.upper, 1, 0)
 }
-upper = qt(.95, df = 456)
-lower = qt(.05, df = 456)
-lower = 100 - (1.96*(15/sqrt(25)))
-count = 0
-for(j in 1:length(test))
+mean(outsideCI)
+##
+
+# Power Function #
+power_func <- function(r)
 {
-  if(test[j] > upper | test[j] < lower) {
-    count = count + 1
+  sd_diff <- sqrt(var(groupB$`Clear Bottle mL`) + var(groupB$`Opaque Bottle mL`) - 
+                    2*r*sd(groupB$`Clear Bottle mL`)*sd(groupB$`Opaque Bottle mL`))
+  power <- power.t.test(n = 38, delta = mean(groupB$Difference), sd = sd_diff, type = "paired")
+  return(power$power)
 }
-
+r <- seq(0.1,0.9,by=0.2)
+for(i in 1:length(r)){
+  pwr <- power_func(r)
 }
-count/100000
-#
-
-
-#power_func <- function(r)
-#{
-#  sd_diff <- sqrt(var(groupB$`Clear Bottle mL`) + var(groupB$`Opaque Bottle mL`) - 
-#                    2*r*sd(groupB$`Clear Bottle mL`)*sd(groupB$`Opaque Bottle mL`))
-#  power <- power.t.test(n = 38, delta = mean(groupB$Difference, sd = sd_diff, type = "paired"))
-#  return(power$power)
-#}
-#power_func(.5)
+cbind(r, pwr)
+power_func(.5276)
+power.t.test(n = 38, delta = mean(groupB$Difference), sd = sd(groupB$Difference), type = "one.sample")
