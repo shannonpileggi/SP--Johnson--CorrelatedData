@@ -55,13 +55,14 @@ cor(groupA$`Clear Bottle mL`, groupA$`Opaque Bottle mL`)
 # correlation = 0.5435
 t.test(groupA$`Clear Bottle mL`, groupA$`Opaque Bottle mL`, paired = TRUE)
 powers <- seq(from = .7, to = .9, by = .02)
+samplesizes <- rep(NA,length(powers))
 for(i in 1:length(powers))
 {
   power <- power.t.test(delta = mean(groupA$Difference), sd = sd(groupA$Difference), power = powers[i], type = "one.sample")
   samplesizes[i] <- power$n  
 }
 power_matrixA <- cbind(powers, samplesizes)
-
+power_matrixA
 
 # Group B: opaue bottle on 1st visit, clear bottle on 2nd visit
 groupB <- subset(data_sub, type == 'B')
@@ -119,17 +120,17 @@ mean(outsideCI)
 ##
 
 # Power Function #
-power_func <- function(r)
+power_func <- function(r, n, s1, s2, delta)
 {
-  sd_diff <- sqrt(var(groupB$`Clear Bottle mL`) + var(groupB$`Opaque Bottle mL`) - 
-                    2*r*sd(groupB$`Clear Bottle mL`)*sd(groupB$`Opaque Bottle mL`))
-  power <- power.t.test(n = 38, delta = mean(groupB$Difference), sd = sd_diff, type = "paired")
+  sd_diff <- sqrt(s1^2 + s2^2 - 2*r*s1*s2)
+  power <- power.t.test(n, delta = delta, sd = sd_diff, type = "paired")
   return(power$power)
 }
+
 r <- seq(0.1,0.9,by=0.2)
 for(i in 1:length(r)){
-  pwr <- power_func(r)
+  pwr <- power_func(r, 38, sd(groupB$`Clear Bottle mL`), sd(groupB$`Opaque Bottle mL`), mean(groupB$Difference))
 }
-cbind(r, pwr)
-power_func(.5276)
+power_r_matrix <- data.frame(r, pwr)
+power_func(.5276, 38, sd(groupB$`Clear Bottle mL`), sd(groupB$`Opaque Bottle mL`), mean(groupB$Difference))
 power.t.test(n = 38, delta = mean(groupB$Difference), sd = sd(groupB$Difference), type = "one.sample")
