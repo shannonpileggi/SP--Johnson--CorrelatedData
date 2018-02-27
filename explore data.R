@@ -130,30 +130,21 @@ power_func <- function(r, n, s1, s2, delta)
 r <- seq(0.1,0.9,by=0.2)
 n <- c(35,40,45)
 k = length(r)*length(n)
-power_df <- numeric(k)
+power_df <- data.frame(n = rep(NA,k), r = rep(NA,k), power = rep(NA,k))
+index <- 0
 for(i in 1:length(n)) {
   for(j in 1:length(r)) {
-      power_df <- append(power_df,power_func(r[j], n[i], sd(groupB$`Clear Bottle mL`), sd(groupB$`Opaque Bottle mL`), 
-                                mean(groupB$Difference)))
+    index <- index + 1
+    power_df[index,1] <- n[i]
+    power_df[index,2] <- r[j]
+    power_df[index,3] <- power_func(r[j], n[i], sd(groupB$`Clear Bottle mL`), 
+                                    sd(groupB$`Opaque Bottle mL`), mean(groupB$Difference))
     }
   }
 power_df
 
 
-for(i in 1:length(n)){
-  for(j in 1:length(r)){
-    print(i*j)
-  }
-}
-#create_dataframe <- function(r, n)
-#{
-#    for(j in 1:length(r)){
-#      pwr <- power_func(r, n, sd(groupB$`Clear Bottle mL`), sd(groupB$`Opaque Bottle mL`), mean(groupB$Difference))
-#  }
-# return(pwr)
-#}
-#create_dataframe(r, 38)
-#power_df <- data.frame(r, pwr, 38)
-#names(power_df)[3] <- "n"
+
+
 power_func(.5276, 38, sd(groupB$`Clear Bottle mL`), sd(groupB$`Opaque Bottle mL`), mean(groupB$Difference))
 power.t.test(n = 38, delta = mean(groupB$Difference), sd = sd(groupB$Difference), type = "one.sample")
