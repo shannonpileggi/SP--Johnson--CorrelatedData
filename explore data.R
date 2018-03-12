@@ -127,24 +127,31 @@ power_func <- function(r, n, s1, s2, delta)
   return(power$power)
 }
 
-r <- seq(0.1,0.9,by=0.2)
+r <- seq(0.1,0.9,by=0.05)
 n <- c(35,40,45)
-k = length(r)*length(n)
-power_df <- data.frame(n = rep(NA,k), r = rep(NA,k), power = rep(NA,k))
+delta <- c(5, 10, 15, 20)
+s1 <- c(35, 40, 45, 50)
+k = length(r)*length(n)*length(s1)
+power_df <- data.frame(n = rep(NA,k), r = rep(NA,k), s1 = rep(NA,k), power = rep(NA,k))
 index <- 0
 for(i in 1:length(n)) {
   for(j in 1:length(r)) {
-    index <- index + 1
-    power_df[index,1] <- n[i]
-    power_df[index,2] <- r[j]
-    power_df[index,3] <- power_func(r[j], n[i], sd(groupB$`Clear Bottle mL`), 
-                                    sd(groupB$`Opaque Bottle mL`), mean(groupB$Difference))
-    }
+    for(m in 1:length(s1)) {
+      index <- index + 1
+      power_df[index,1] <- n[i]
+      power_df[index,2] <- r[j]
+      power_df[index,3] <- s1[m]
+      power_df[index,4] <- power_func(r[j], n[i], s1[m], 
+                                      .75*s1[m], delta[2])
+      }
+    } 
   }
 power_df
+# sd(groupB$`Clear Bottle mL`) # 49.44655
+# sd(groupB$`Opaque Bottle mL`) # 44.46599
+# mean(groupB$Difference) # 6.974264
+ggplot(power_df, aes(x = r, y = power, col = as.factor(n))) + geom_line() + facet_wrap( ~ s1, ncol = 2) + xlab("Correlation") + ylab("Power")  + labs(col = "Sample Size")
 
 
 
 
-power_func(.5276, 38, sd(groupB$`Clear Bottle mL`), sd(groupB$`Opaque Bottle mL`), mean(groupB$Difference))
-power.t.test(n = 38, delta = mean(groupB$Difference), sd = sd(groupB$Difference), type = "one.sample")
