@@ -38,6 +38,8 @@ names(groupA) <- c("Study ID", "Clear Bottle mL", "Opaque Bottle mL")
 groupA$Difference <- groupA$`Clear Bottle mL` - groupA$`Opaque Bottle mL`
 mean(groupA$`Clear Bottle mL`)
 mean(groupA$`Opaque Bottle mL`)
+median(groupA$`Clear Bottle mL`)
+median(groupA$`Opaque Bottle mL`)
 mean(groupA$Difference)
 sd(groupA$Difference)
 sd(groupA$`Clear Bottle mL`)
@@ -134,32 +136,98 @@ power_func <- function(r, n, s1, s2, delta)
   return(power$power)
 }
 
-r <- seq(0.1,0.9,by=0.05)
-n <- c(35,40,45)
-delta <- c(5, 10, 15, 20)
-s1 <- c(35, 40, 45, 50)
-k = length(r)*length(n)*length(s1)
-power_df <- data.frame(n = rep(NA,k), r = rep(NA,k), s1 = rep(NA,k), power = rep(NA,k))
+## Graph 1
+r <- seq(0.1,0.95,by=0.05)
+n <- 37
+delta <- 8.879838
+s1 <- 53.70171
+s2<- 44.66042
+k = length(r)
+power_df <- data.frame(n = rep(NA,k), r = rep(NA,k), s1 = rep(NA,k), 
+                       s2 = rep(NA,k), delta = rep(NA,k), power = rep(NA,k))
 index <- 0
-for(i in 1:length(n)) {
-  for(j in 1:length(r)) {
-    for(m in 1:length(s1)) {
+for(i in 1:length(r)) {
       index <- index + 1
-      power_df[index,1] <- n[i]
-      power_df[index,2] <- r[j]
-      power_df[index,3] <- s1[m]
-      power_df[index,4] <- power_func(r[j], n[i], s1[m], 
-                                      .75*s1[m], delta[2])
-      }
-    } 
-  }
+      power_df[index,1] <- n
+      power_df[index,2] <- r[i]
+      power_df[index,3] <- s1
+      power_df[index,4] = s2
+      power_df[index,5] = delta
+      power_df[index,6] <- power_func(r[i], n, s1, s2, delta)
+    }
 power_df
-# sd(groupB$`Clear Bottle mL`) # 49.44655
-# sd(groupB$`Opaque Bottle mL`) # 44.46599
-# mean(groupB$Difference) # 6.974264
-sd_vals <- list("SD = 35", "SD = 40", "SD = 45", "SD = 50")
-ggplot(power_df, aes(x = r, y = power, col = as.factor(n))) + geom_line() + facet_wrap( ~ s1, ncol = 2, labeller = label_both) + xlab("Correlation") + ylab("Power")  + labs(col = "Sample Size")
+
+ggplot(power_df, aes(x = r, y = power, col = "red")) + geom_line() + labs(title = "Power vs. Correlation", x = "Correlation", y = "Power") + theme(legend.position="none") + theme(plot.title = element_text(hjust = 0.5))
+
+
+## Graph 2
+r <- seq(0.1,0.95,by=0.05)
+n <- c(20, 30, 40, 50)
+delta <- 8.879838
+s1 <- 53.70171
+s2<- 44.66042
+k = length(r)*length(n)
+power_df <- data.frame(n = rep(NA,k), r = rep(NA,k), s1 = rep(NA,k), 
+                       s2 = rep(NA,k), delta = rep(NA,k), power = rep(NA,k))
+index <- 0
+for(i in 1:length(r)) {
+  for(j in 1:length(n)){
+  index <- index + 1
+  power_df[index,1] <- n[j]
+  power_df[index,2] <- r[i]
+  power_df[index,3] <- s1
+  power_df[index,4] = s2
+  power_df[index,5] = delta
+  power_df[index,6] <- power_func(r[i], n[j], s1, s2, delta)
+  }
+}  
+power_df
+
+ggplot(power_df, aes(x = r, y = power, col = as.factor(n))) + geom_line() + labs(title = "Power vs. Correlation", x = "Correlation", y = "Power") + labs(col = "Sample Size") + theme(plot.title = element_text(hjust = 0.5))
+
+## Graph 3
+r <- seq(0.1,0.95,by=0.05)
+n <- c(20, 30, 40, 50)
+delta <- c(10, 20, 30, 40)
+s1 <- 53.70171
+s2<- 44.66042
+k = length(r)*length(n)*length(delta)
+power_df <- data.frame(n = rep(NA,k), r = rep(NA,k), s1 = rep(NA,k), 
+                       s2 = rep(NA,k), delta = rep(NA,k), power = rep(NA,k))
+index <- 0
+for(i in 1:length(r)) {
+  for(j in 1:length(n)){
+    for(h in 1:length(delta)){
+    index <- index + 1
+    power_df[index,1] <- n[j]
+    power_df[index,2] <- r[i]
+    power_df[index,3] <- s1
+    power_df[index,4] = s2
+    power_df[index,5] = delta[h]
+    power_df[index,6] <- power_func(r[i], n[j], s1, s2, delta[h])
+    }
+  }  
+}  
+power_df
+
+ggplot(power_df, aes(x = r, y = power, col = as.factor(n))) + geom_line() + facet_wrap( ~ delta, ncol = 2, labeller = label_both) + labs(title = "Power vs. Correlation", x = "Correlation", y = "Power") + labs(col = "Sample Size") + theme(plot.title = element_text(hjust = 0.5))
 
 
 
+# Power using given data 
+# Group A - Clear Bottle First, Opaque Bottle Second
+power_func(.5435, 37, 53.70171, 44.66042, 8.879838)
+# .1958054
+power_func(.5435, 100, 53.70171, 44.66042, 8.879838)
+# If we increase sample size to 100, assuming everything else stays the same, power 
+# increases to 0.4542762
+power_func(0.815, 37, 53.70171, 44.66042, 8.879838)
+# If we keep sample size the same, but increase the correlation between visit 1 and
+# visit 2 to 0.8, then power increases to 0.3704901
+power_func(0.951, 37, 53.70171, 44.66042, 8.879838)
+
+# Group B - Opaque Bottle First, Clear Bottle Second
+power_func(0.5276, 38, 49.44655, 44.46599, -6.974264)
+# .1476795
+power_func(0.7914, 38, 49.44655, 44.46599, -6.974264)
 

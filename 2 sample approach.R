@@ -1,3 +1,4 @@
+
 data <- read.csv("/Users/emilyjohnson/Desktop/Stats_Senior_Project_Data.csv", header = TRUE)
 library(ggplot2)
 head(data)
@@ -71,40 +72,160 @@ boxplot(clear_sample$diff, opaque_sample$diff, names = c("Clear Differences","Op
 
 t.test(clear_sample$diff, opaque_sample$diff, alternative = "two.sided")
 
-# Power Function #
-power_func <- function(r, n, s1, s2, delta)
+# is there a way to do a true false arguement if we need pooled sd or not?
+# Power Simulation for 2 sample
+# need to incorporate r into the function, but not sure how to with sd_pooled??? 
+power_2samptest <- function(n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled)
 {
-  sd_diff <- sqrt(s1^2 + s2^2 - 2*r*s1*s2)
-  power <- power.t.test(n, delta = delta, sd = sd_diff, type = "paired")
-  return(power$power)
-}
+  sd1_diff <- sqrt(s1a^2 + s1b^2 - 2*r1*s1a*s1b)
+  sd2_diff <- sqrt(s2a^2 + s2b^2 - 2*r2*s2a*s2b)
+  if(pooled == TRUE)
+  {
+    std_error <- (sqrt(((n1 - 1)*sd1_diff^2 + (n2 - 1)*sd2_diff^2)/(n1 + n2 - 2)))*sqrt(1/n1 + 1/n2)
+  }
+  else
+  {
+    std_error <- sqrt(sd1_diff^2/n1 + sd2_diff^2/n2)
+  }
 
-n <- c(35,40,45)
+  df <- n1 + n2 - 2
+  mu0 <- 0 
+  reps <- 10000
+  outsideCI <- numeric(reps)
+  set.seed(2)
+  for (i in 1:reps) {
+    x <- rnorm(n1, delta1, sd1_diff)
+    y <- rnorm(n2, delta2, sd2_diff)
+    CI.lower <- (mean(x)-mean(y)) - qt(0.975, df)*std_error
+    CI.upper <- (mean(x)-mean(y)) + qt(0.975, df)*std_error
+    outsideCI[i] <- ifelse(mu0 < CI.lower | mu0 > CI.upper, 1, 0)
+  }
+  return(mean(outsideCI))
+}
+# returns power
+
+# n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
+power_2samptest(30,30,5,7,5,7,.5,.5,40,35,FALSE)
+
+# to check 
+power.t.test(n=30, delta = 5, sd = 6.244998, type = "two.sample")
+##
+
+# Example 1 - same sample size, correlation, sd, diff mean difference
+
+n <- 35
+r <- seq(0.5,0.9,by=0.025)
+diff1 <- 20
+sd_a <- 8
+sd_b <- 8
+k = length(r)
+power_2samp <- data.frame(n1 = rep(NA,k), n2 = rep(NA,k), r1 = rep(NA,k), r2 = rep(NA,k),
+                          diff1 = rep(NA,k), diff2 = rep(NA,k), totaldiff = rep(NA,k), 
+                          s1 = rep(NA,k), s2 = rep(NA,k), power = rep(NA,k))
+index <- 0
+for(i in 1:length(r)) {
+          index <- index + 1
+          power_2samp[index,1] <- n
+          power_2samp[index,2] <- n
+          power_2samp[index,3] <- r[i]
+          power_2samp[index,4] <- r[i]
+          power_2samp[index,5] <- diff1
+          power_2samp[index,6] <- diff1 + 4
+          power_2samp[index,7] <- 4
+          power_2samp[index,8] <- sqrt(sd_a^2 + sd_b^2 - 2*r[i]*sd_a*sd_b)
+          power_2samp[index,9] <- sqrt(sd_a^2 + sd_b^2 - 2*r[i]*sd_a*sd_b)
+          power_2samp[index,10] <- power_2samptest(n, n, sd_a, sd_b, 
+                                                   sd_a, sd_b, r[i], r[i],
+                                                   diff1, diff1 + 4, TRUE)
+          # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
+}
+power_2samp
+
+ggplot(power_2samp, aes(x = r1, y = power, col = "red")) + geom_line() + labs(title = "Power vs. Correlation", x = "Correlation", y = "Power") + theme(legend.position="none") + theme(plot.title = element_text(hjust = 0.5))  
+
+# Example 2 - same sample size, sd, diff correlation
+
+n <- 35
+r1 <- seq(0.525,0.9,by=0.025)
+r2 <- 0.5
+diff1 <- 20
+sd_a <- 8
+sd_b <- 8
+k = length(r1)*length(r2)
+power_2samp <- data.frame(n1 = rep(NA,k), n2 = rep(NA,k), r1 = rep(NA,k), r2 = rep(NA,k),
+                          diff1 = rep(NA,k), diff2 = rep(NA,k), totaldiff = rep(NA,k), 
+                          s1 = rep(NA,k), s2 = rep(NA,k), power = rep(NA,k))
+index <- 0
+for(i in 1:length(r1)) {
+  for(j in 1:length(r2)){
+  index <- index + 1
+  power_2samp[index,1] <- n
+  power_2samp[index,2] <- n
+  power_2samp[index,3] <- r1[i]
+  power_2samp[index,4] <- r2[j] 
+  power_2samp[index,5] <- diff1
+  power_2samp[index,6] <- diff1 + 4
+  power_2samp[index,7] <- 4
+  power_2samp[index,8] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
+  power_2samp[index,9] <- sqrt(sd_a^2 + sd_b^2 - 2*r2[j]*sd_a*sd_b)
+  power_2samp[index,10] <- power_2samptest(n, n, sd_a, sd_b, 
+                                           sd_a, sd_b, r1[i], r2[j],
+                                           diff1, diff1 + 4, TRUE)
+  # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
+  }
+}  
+power_2samp
+ggplot(power_2samp, aes(x = r1-r2, y = power, col = "red")) + geom_line() + labs(title = "Power vs. Difference Between Correlations of Two Groups", x = "Difference between CorrelationS", y = "Power") + theme(legend.position="none") + theme(plot.title = element_text(hjust = 0.5))  
+
+
+# Example 3 - same sample size, correlation, diff sd
+
+n <- c(35, 40)
 r <- seq(0.5,0.9,by=0.05)
-diff1 <- c(10, 15, 20)
-s <- c(35, 40, 45)
-k = length(r)*length(n)*length(s)*length(diff1)
-power_2samp <- data.frame(n = rep(NA,k), r = rep(NA,k), diff1 = rep(NA,k), diff2 = rep(NA,k), 
-                       totaldiff = rep(NA,k), s = rep(NA,k), power = rep(NA,k))
+diff1 <- 10
+sd_a <- 40
+sd_b <- 35
+k = length(r)*length(n)*length(diff1)*length(sd_a)*length(sd_b)
+power_2samp <- data.frame(n1 = rep(NA,k), n2 = rep(NA,k), r1 = rep(NA,k), r2 = rep(NA,k),
+                          diff1 = rep(NA,k), diff2 = rep(NA,k),  
+                          s1 = rep(NA,k), s2 = rep(NA,k), power = rep(NA,k))
 index <- 0
 for(f in 1:length(n)) {
   for(g in 1:length(r)) {
     for(h in 1:length(diff1)){
-        for(j in 1:length(s)) {
-      index <- index + 1
-      power_2samp[index,1] <- n[f]
-      power_2samp[index,2] <- r[g]
-      power_2samp[index,3] <- diff1[h]
-      power_2samp[index,4] <- 1.5*diff1[h]
-      power_2samp[index,5] <- diff1[h] - 1.5*diff1[h]
-      power_2samp[index,6] <- s[j]
-      power_2samp[index,7] <- power_func(r[g], n[f], s[j], 
-                                      s[j], diff1[h] - 1.5*diff1[h])
-        
+      for(i in 1:length(sd_a)) {
+        for(j in 1:length(sd_b)){
+          index <- index + 1
+          power_2samp[index,1] <- n[f]
+          power_2samp[index,2] <- n[f]
+          power_2samp[index,3] <- r[g]
+          power_2samp[index,4] <- r[g]
+          power_2samp[index,5] <- diff1[h]
+          power_2samp[index,6] <- diff1[h]
+          power_2samp[index,7] <- sqrt(sd_a[i]^2 + sd_b[j]^2 - 2*r[g]*sd_a[i]*sd_b[j])
+          power_2samp[index,8] <- sqrt((sd_a[i]-5)^2 + sd_b[j]^2 - 2*r[g]*sd_a[i]*sd_b[j])
+          power_2samp[index,9] <- power_2samptest(n[f], n[f], sd_a[i], sd_b[j], 
+                                                   sd_a[i], sd_b[j], r[g], r[g],
+                                                   diff1[h], diff1[h], TRUE)
+          # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
+        }
       }
     }
   } 
 }
 power_2samp
 
-ggplot(power_2samp, aes(x = r, y = power, col = as.factor(s))) + geom_line() + facet_wrap( ~ totaldiff, ncol = 3, labeller = label_both) + xlab("Correlation") + ylab("Power")  + labs(col = "Sample Size")
+#
+# power_2samptest <- function(n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled)
+  
+r <- seq(from = .2, to = .9, by = .1)
+power_vals <- rep(NA,length(r))
+for(i in 1:length(r))
+{
+  power_vals[i] <- power_2samptest(n1 = 40, n2 = 40, s1a = 5, s1b = 6, s2a = 5, s2b = 6, r1 = r[i], 
+                        r2 = r[i], delta1 = 1, delta2 = 7, pooled = FALSE)
+}
+power_matrix_2samp <- cbind(r, power_vals)
+power_matrix_2samp
+
+
