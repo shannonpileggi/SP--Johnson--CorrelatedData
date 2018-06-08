@@ -1,5 +1,5 @@
 
-data <- read.csv("/Users/emilyjohnson/Desktop/Stats_Senior_Project_Data.csv", header = TRUE)
+data <- read.csv("/Users/emilyjohnson/Desktop/Senior Project/Stats_Senior_Project_Data.csv", header = TRUE)
 library(ggplot2)
 head(data)
 data_sub <- data[c(1:3,19)]
@@ -74,7 +74,7 @@ t.test(clear_sample$diff, opaque_sample$diff, alternative = "two.sided")
 
 # is there a way to do a true false arguement if we need pooled sd or not?
 # Power Simulation for 2 sample
-# need to incorporate r into the function, but not sure how to with sd_pooled??? 
+# need to incorporate r into the function
 power_2samptest <- function(n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled)
 {
   sd1_diff <- sqrt(s1a^2 + s1b^2 - 2*r1*s1a*s1b)
@@ -103,6 +103,7 @@ power_2samptest <- function(n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, 
   return(mean(outsideCI))
 }
 # returns power
+
 
 # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
 power_2samptest(30,30,5,7,5,7,.5,.5,40,35,FALSE)
@@ -143,89 +144,144 @@ power_2samp
 
 ggplot(power_2samp, aes(x = r1, y = power, col = "red")) + geom_line() + labs(title = "Power vs. Correlation", x = "Correlation", y = "Power") + theme(legend.position="none") + theme(plot.title = element_text(hjust = 0.5))  
 
-# Example 2 - same sample size, sd, diff correlation
 
-n <- 35
-r1 <- seq(0.525,0.9,by=0.025)
-r2 <- 0.5
+
+# Example 2 - same sample size, sd, diff correlation, pooled = FALSE
+
+n <- 30
+r1 <- seq(0.1,0.9,by=0.025)
+r2 <- c(0.3,0.5,0.7)
 diff1 <- 20
 sd_a <- 8
 sd_b <- 8
-k = length(r1)*length(r2)
+k = length(r1)*length(r2)*length(n)
 power_2samp <- data.frame(n1 = rep(NA,k), n2 = rep(NA,k), r1 = rep(NA,k), r2 = rep(NA,k),
                           diff1 = rep(NA,k), diff2 = rep(NA,k), totaldiff = rep(NA,k), 
-                          s1 = rep(NA,k), s2 = rep(NA,k), power = rep(NA,k))
+                          s1 = rep(NA,k), s2 = rep(NA,k), std_error = rep(NA,k), power = rep(NA,k))
 index <- 0
 for(i in 1:length(r1)) {
   for(j in 1:length(r2)){
+    index <- index + 1
+    power_2samp[index,1] <- n
+    power_2samp[index,2] <- n
+    power_2samp[index,3] <- r1[i]
+    power_2samp[index,4] <- r2[j] 
+    power_2samp[index,5] <- diff1
+    power_2samp[index,6] <- diff1 + 4
+    power_2samp[index,7] <- 4
+    power_2samp[index,8] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
+    power_2samp[index,9] <- sqrt(sd_a^2 + sd_b^2 - 2*r2[j]*sd_a*sd_b)
+    power_2samp[index, 10] <- sqrt(power_2samp[index,8]/power_2samp[index,1] + power_2samp[index,9]/power_2samp[index,2])
+    power_2samp[index,11] <- power_2samptest(n, n, sd_a, sd_b, 
+                                             sd_a, sd_b, r1[i], r2[j],
+                                             diff1, diff1 + 4, FALSE)
+    # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
+  }  
+}  
+power_2samp
+ggplot(power_2samp, aes(x = std_error, y = power, col = as.factor(r2))) + geom_line() + labs(title = "Power vs. Standard Error", x = "Standard Error", y = "Power") + labs(col = "r2") + theme(plot.title = element_text(hjust = 0.5))
+
+# power_2samptest <- function(n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled)
+
+
+
+## Example 3 - same n, same r, same s1 and s2, diff = 4, pooled = TRUE, 
+
+n <- 35
+r1 <- seq(.1,.9,.025)
+diff1 <- 20
+sd_a <- 8
+sd_b <- 8
+k = length(r1)
+power_2samp <- data.frame(n1 = rep(NA,k), n2 = rep(NA,k), r1 = rep(NA,k), r2 = rep(NA,k),
+                          diff1 = rep(NA,k), diff2 = rep(NA,k), totaldiff = rep(NA,k), 
+                          s1 = rep(NA,k), s2 = rep(NA,k), s_pooled = rep(NA,k), power = rep(NA,k))
+index <- 0
+for(i in 1:length(r1)) {
   index <- index + 1
   power_2samp[index,1] <- n
   power_2samp[index,2] <- n
   power_2samp[index,3] <- r1[i]
-  power_2samp[index,4] <- r2[j] 
+  power_2samp[index,4] <- r1[i] 
   power_2samp[index,5] <- diff1
   power_2samp[index,6] <- diff1 + 4
   power_2samp[index,7] <- 4
   power_2samp[index,8] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
-  power_2samp[index,9] <- sqrt(sd_a^2 + sd_b^2 - 2*r2[j]*sd_a*sd_b)
-  power_2samp[index,10] <- power_2samptest(n, n, sd_a, sd_b, 
-                                           sd_a, sd_b, r1[i], r2[j],
+  power_2samp[index,9] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
+  power_2samp[index, 10] <- (sqrt(((n - 1)*power_2samp[index,8]^2 + (n - 1)*power_2samp[index,9]^2)/(n + n - 2)))
+  power_2samp[index,11] <- power_2samptest(n, n, sd_a, sd_b, 
+                                           sd_a, sd_b, r1[i], r1[i],
                                            diff1, diff1 + 4, TRUE)
   # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
-  }
 }  
 power_2samp
-ggplot(power_2samp, aes(x = r1-r2, y = power, col = "red")) + geom_line() + labs(title = "Power vs. Difference Between Correlations of Two Groups", x = "Difference between CorrelationS", y = "Power") + theme(legend.position="none") + theme(plot.title = element_text(hjust = 0.5))  
+ggplot(power_2samp, aes(x = r1, y = s_pooled)) + geom_line() + geom_hline(yintercept = 8, linetype = "dashed", col = "red") + geom_vline(xintercept = 0.5, linetype = "dashed", col = "red") + labs(title = "Pooled Standard Deviation vs. Correlation", x = "Correlation", y = "Pooled Standard Deviation") + theme(legend.position="none") + theme(plot.title = element_text(hjust = 0.5))  
 
 
-# Example 3 - same sample size, correlation, diff sd
+## Example 4 - same n, same r, same s1 and s2, diff = 4, pooled = TRUE, 
 
-n <- c(35, 40)
-r <- seq(0.5,0.9,by=0.05)
-diff1 <- 10
-sd_a <- 40
-sd_b <- 35
-k = length(r)*length(n)*length(diff1)*length(sd_a)*length(sd_b)
+n <- 35
+r1 <- seq(.1,.9,.025)
+diff1 <- 20
+sd_a <- 8
+sd_b <- 8
+k = length(r1)
 power_2samp <- data.frame(n1 = rep(NA,k), n2 = rep(NA,k), r1 = rep(NA,k), r2 = rep(NA,k),
-                          diff1 = rep(NA,k), diff2 = rep(NA,k),  
-                          s1 = rep(NA,k), s2 = rep(NA,k), power = rep(NA,k))
+                          diff1 = rep(NA,k), diff2 = rep(NA,k), totaldiff = rep(NA,k), 
+                          s1 = rep(NA,k), s2 = rep(NA,k), s_pooled = rep(NA,k), power = rep(NA,k))
 index <- 0
-for(f in 1:length(n)) {
-  for(g in 1:length(r)) {
-    for(h in 1:length(diff1)){
-      for(i in 1:length(sd_a)) {
-        for(j in 1:length(sd_b)){
-          index <- index + 1
-          power_2samp[index,1] <- n[f]
-          power_2samp[index,2] <- n[f]
-          power_2samp[index,3] <- r[g]
-          power_2samp[index,4] <- r[g]
-          power_2samp[index,5] <- diff1[h]
-          power_2samp[index,6] <- diff1[h]
-          power_2samp[index,7] <- sqrt(sd_a[i]^2 + sd_b[j]^2 - 2*r[g]*sd_a[i]*sd_b[j])
-          power_2samp[index,8] <- sqrt((sd_a[i]-5)^2 + sd_b[j]^2 - 2*r[g]*sd_a[i]*sd_b[j])
-          power_2samp[index,9] <- power_2samptest(n[f], n[f], sd_a[i], sd_b[j], 
-                                                   sd_a[i], sd_b[j], r[g], r[g],
-                                                   diff1[h], diff1[h], TRUE)
-          # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
-        }
-      }
-    }
-  } 
-}
+for(i in 1:length(r1)) {
+  index <- index + 1
+  power_2samp[index,1] <- n
+  power_2samp[index,2] <- n
+  power_2samp[index,3] <- r1[i]
+  power_2samp[index,4] <- r1[i] 
+  power_2samp[index,5] <- diff1
+  power_2samp[index,6] <- diff1 + 4
+  power_2samp[index,7] <- 4
+  power_2samp[index,8] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
+  power_2samp[index,9] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
+  power_2samp[index, 10] <- (sqrt(((n - 1)*power_2samp[index,8]^2 + (n - 1)*power_2samp[index,9]^2)/(n + n - 2)))
+  power_2samp[index,11] <- power_2samptest(n, n, sd_a, sd_b, 
+                                           sd_a, sd_b, r1[i], r1[i],
+                                           diff1, diff1 + 4, TRUE)
+  # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
+}  
 power_2samp
+ggplot(power_2samp, aes(x = s_pooled, y = power, col = "red")) + geom_line() + labs(title = "Power vs. Pooled Standard Deviation", x = "Pooled Standard Deviation", y = "Power") + theme(legend.position="none") + theme(plot.title = element_text(hjust = 0.5))  
 
-#
-# power_2samptest <- function(n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled)
-  
-r <- seq(from = .2, to = .9, by = .1)
-power_vals <- rep(NA,length(r))
-for(i in 1:length(r))
-{
-  power_vals[i] <- power_2samptest(n1 = 40, n2 = 40, s1a = 5, s1b = 6, s2a = 5, s2b = 6, r1 = r[i], 
-                        r2 = r[i], delta1 = 1, delta2 = 7, pooled = FALSE)
-}
-power_matrix_2samp <- cbind(r, power_vals)
-power_matrix_2samp
+## Example 5 - same n, same r, same s1 and s2, diff = 4, pooled = TRUE, 
 
+n <- c(30, 35, 40)
+r1 <- seq(.1,.9,.025)
+diff1 <- 20
+sd_a <- 8
+sd_b <- 8
+k = length(r1)*length(n)
+power_2samp <- data.frame(n1 = rep(NA,k), n2 = rep(NA,k), r1 = rep(NA,k), r2 = rep(NA,k),
+                          diff1 = rep(NA,k), diff2 = rep(NA,k), totaldiff = rep(NA,k), 
+                          s1 = rep(NA,k), s2 = rep(NA,k), s_pooled = rep(NA,k), power = rep(NA,k))
+index <- 0
+for(i in 1:length(r1)) {
+  for(j in 1:length(n)){
+  index <- index + 1
+  power_2samp[index,1] <- n[j]
+  power_2samp[index,2] <- n[j]
+  power_2samp[index,3] <- r1[i]
+  power_2samp[index,4] <- r1[i] 
+  power_2samp[index,5] <- diff1
+  power_2samp[index,6] <- diff1 + 4
+  power_2samp[index,7] <- 4
+  power_2samp[index,8] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
+  power_2samp[index,9] <- sqrt(sd_a^2 + sd_b^2 - 2*r1[i]*sd_a*sd_b)
+  power_2samp[index, 10] <- (sqrt(((n[j] - 1)*power_2samp[index,8]^2 + (n[j] - 1)*power_2samp[index,9]^2)/(n[j] + n[j] - 2)))
+  power_2samp[index,11] <- power_2samptest(n[j], n[j], sd_a, sd_b, 
+                                           sd_a, sd_b, r1[i], r1[i],
+                                           diff1, diff1 + 4, TRUE)
+  # n1, n2, s1a, s1b, s2a, s2b, r1, r2, delta1, delta2, pooled
+  } 
+}  
+power_2samp
+ggplot(power_2samp, aes(x = r1, y = power, col = as.factor(n1))) + geom_line() + labs(title = "Power vs. Correlation", x = "Correlation", y = "Power")  + labs(col = "Sample Size") + theme(plot.title = element_text(hjust = 0.5))  
+ggplot(power_2samp, aes(x = s_pooled, y = power, col = as.factor(n1))) + geom_line() + labs(title = "Power vs. Pooled Standard Deviation", x = "Pooled Standard Deviation", y = "Power")  + labs(col = "Sample Size") + theme(plot.title = element_text(hjust = 0.5))  
 
